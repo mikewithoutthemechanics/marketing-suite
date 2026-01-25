@@ -1,0 +1,34 @@
+version: '3.8'
+services:
+  app:
+    build: .
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/scheduler
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - MASTER_KEY=${MASTER_KEY}
+    depends_on:
+      - redis
+      - postgres
+  worker:
+    build: .
+    command: node worker.js
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/scheduler
+      - MASTER_KEY=${MASTER_KEY}
+    depends_on:
+      - redis
+      - postgres
+  redis:
+    image: redis:7
+    restart: unless-stopped
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=scheduler
+    restart: unless-stopped

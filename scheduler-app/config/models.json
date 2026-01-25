@@ -1,0 +1,60 @@
+{
+  "text": [
+    {
+      "id": "openrouter-gpt-4o-mini",
+      "provider": "OpenRouter",
+      "model": "gpt-4o-mini",
+      "notes": "Good for short-form, conversion copy and hashtag generation. Requires OPENROUTER_API_KEY."
+    },
+    {
+      "id": "hf-llama-2-7b-chat",
+      "provider": "HuggingFace (hosted)",
+      "model": "llama-2-7b-chat",
+      "notes": "Local/hosted option for chat-style copy; may require model hosting or HF Inference API key."
+    },
+    {
+      "id": "anthropic-claude-mini",
+      "provider": "Anthropic (if available)",
+      "model": "claude-mini",
+      "notes": "Lightweight Claude-style model if accessible via provider."
+    }
+  ],
+  "image": [
+    {
+      "id": "stability-sdxl",
+      "provider": "Stability / SDXL",
+      "model": "sdxl",
+      "notes": "High-quality production stills; may require API key for Stability or hosted SDXL endpoint."
+    },
+    {
+      "id": "openrouter-image-sdxl",
+      "provider": "OpenRouter Image",
+      "model": "sdxl-like",
+      "notes": "Via OpenRouter-compatible image endpoint if available."
+    },
+    {
+      "id": "hf-stable-diffusion",
+      "provider": "HuggingFace Stable Diffusion",
+      "model": "stable-diffusion-v1-5",
+      "notes": "Good fallback; check license for commercial use."
+    }
+  ],
+  "video": [
+    {
+      "id": "runway-gen-2",
+      "provider": "Runway (Gen-2)",
+      "notes": "High-quality generative video (may require account and credits)."
+    },
+    {
+      "id": "openrouter-video-experimental",
+      "provider": "OpenRouter (experimental)",
+      "notes": "Some OpenRouter-compatible providers expose video endpoints; availability varies."
+    },
+    {
+      "id": "synthesia-style",
+      "provider": "Synthesia / avatar services",
+      "notes": "For human-presenter-style marketing videos (not strictly free)."
+    }
+  ],
+  "notes": "These are suggested model IDs/providers to preload in the dashboard so users can pick them; availability and free tiers vary by provider and region."
+}

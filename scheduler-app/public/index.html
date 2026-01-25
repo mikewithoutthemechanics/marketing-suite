@@ -1,0 +1,192 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Scheduler Admin</title>
+  </head>
+  <body>
+    <h1>Scheduler Admin</h1>
+    <section>
+      <h2>Add Client</h2>
+      <form id="clientForm">
+        <input placeholder="Client name" id="clientName" />
+        <textarea id="clientCreds" placeholder='{"youtube": {"apiKey":"..."}, "x": {"handle":"@acme"}}'></textarea>
+        <button>Add</button>
+      </form>
+    </section>
+
+    <section>
+      <h2>Provider Config</h2>
+      <form id="providerForm">
+        <input placeholder="Provider (twitter/instagram/tiktok)" id="providerName" />
+        <textarea id="providerConfig" placeholder='{"client_id":"...","client_secret":"..."}'></textarea>
+        <button>Save Provider</button>
+      </form>
+    </section>
+
+    <section>
+      <h2>Create Post</h2>
+      <form id="postForm">
+        <select id="clientSelect"></select>
+        <input placeholder="Platforms (csv: youtube,x,instagram)" id="platforms" />
+        <input placeholder="Title" id="title" />
+        <textarea placeholder="Text" id="text"></textarea>
+        <input placeholder="scheduledAt (ISO) or empty for now" id="scheduledAt" />
+        <button>Create</button>
+      </form>
+    </section>
+
+    <section>
+      <h2>Posts</h2>
+      <div id="calendar"></div>
+      <pre id="posts" style="display:none"></pre>
+    </section>
+
+    <script>
+      async function loadClients(){
+        const res = await fetch('/api/clients');
+        const clients = await res.json();
+        const sel = document.getElementById('clientSelect');
+        sel.innerHTML = '';
+        clients.forEach(c => { const opt = document.createElement('option'); opt.value = c.id; opt.textContent = c.name; sel.appendChild(opt); });
+      }
+
+      document.getElementById('clientForm').onsubmit = async e => {
+        e.preventDefault();
+        const name = document.getElementById('clientName').value;
+        const creds = JSON.parse(document.getElementById('clientCreds').value || '{}');
+        await fetch('/api/clients', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, creds }) });
+        await loadClients();
+      };
+
+      document.getElementById('providerForm').onsubmit = async e => {
+        e.preventDefault();
+        const provider = document.getElementById('providerName').value;
+        const config = JSON.parse(document.getElementById('providerConfig').value || '{}');
+        await fetch('/api/provider-config', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ provider, config }) });
+        alert('Saved');
+      };
+
+      document.getElementById('postForm').onsubmit = async e => {
+        e.preventDefault();
+        const clientId = document.getElementById('clientSelect').value;
+        const platforms = document.getElementById('platforms').value.split(',').map(s=>s.trim()).filter(Boolean);
+        const title = document.getElementById('title').value;
+        const text = document.getElementById('text').value;
+        const scheduledAt = document.getElementById('scheduledAt').value || null;
+        await fetch('/api/posts', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ clientId, platforms, title, text, scheduledAt }) });
+        loadPosts();
+      };
+
+      async function loadPosts(){
+        const res = await fetch('/api/posts');
+        const posts = await res.json();
+        return posts;
+      }
+
+      async function renderCalendar(){
+        const posts = await loadPosts();
+        const events = posts.map(p => ({ id: p.id, title: p.title || (p.text||'Post').substring(0,30), start: p.scheduledAt || p.createdAt }));
+        const calendarEl = document.getElementById('calendar');
+        calendarEl.innerHTML = '';
+        const list = document.createElement('ul');
+        events.forEach(ev => { const li = document.createElement('li'); li.textContent = `${ev.start} — ${ev.title}`; list.appendChild(li); });
+        calendarEl.appendChild(list);
+      }
+
+      loadClients();
+      renderCalendar();
+
+      // Add OAuth link buttons for each client after clients load
+      async function renderClientLinks(){
+        const res = await fetch('/api/clients');
+        const clients = await res.json();
+        const container = document.createElement('div');
+        clients.forEach(c => {
+          const row = document.createElement('div');
+          row.innerHTML = `<strong>${c.name}</strong> `;
+          ['twitter','instagram','tiktok'].forEach(p => {
+            const a = document.createElement('a');
+            a.href = `/auth/${p}/start?clientId=${c.id}`;
+            a.textContent = `Link ${p}`;
+            a.style.marginRight = '8px';
+            row.appendChild(a);
+          });
+          container.appendChild(row);
+        });
+        document.body.insertBefore(container, document.getElementById('calendar'));
+      }
+
+      renderClientLinks();
+
+      // Fetch client pages for Meta and allow selecting default page
+      async function renderClientPages(){
+        const res = await fetch('/api/clients');
+        const clients = await res.json();
+        for (const c of clients) {
+          const r = await fetch(`/api/client/${c.id}/pages`);
+          if (r.status !== 200) continue;
+          const pages = await r.json();
+          if (!pages || !pages.length) continue;
+          const div = document.createElement('div');
+          div.innerHTML = `<h4>Pages for ${c.name}</h4>`;
+          const sel = document.createElement('select');
+          sel.id = `pages_${c.id}`;
+          pages.forEach(p => { const opt = document.createElement('option'); opt.value = p.pageId || p.id; opt.textContent = p.name || (p.pageId || p.id); sel.appendChild(opt); });
+          const btn = document.createElement('button'); btn.textContent = 'Set Default Page';
+          btn.onclick = async () => {
+            const pageId = sel.value;
+            await fetch(`/api/client/${c.id}/select-page`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ pageId }) });
+            alert('Default page set');
+          };
+          div.appendChild(sel);
+          div.appendChild(btn);
+          document.body.insertBefore(div, document.getElementById('calendar'));
+        }
+      }
+
+      renderClientPages();
+
+      // ==== Test Functions ====
+      const testSection = document.createElement('section');
+      testSection.innerHTML = '<h2>Test Functions</h2>';
+      testSection.innerHTML += '<button id="btnFetchProviders">Fetch Providers</button><pre id="providersResult"></pre>';
+      testSection.innerHTML += '<button id="btnTestProviderConfig">Test Provider Config</button><pre id="providerConfigResult"></pre>';
+      testSection.innerHTML += '<button id="btnTestSkyreels">Test SkyReels Generate</button><pre id="skyreelsResult"></pre>';
+      document.body.insertBefore(testSection, document.getElementById('calendar'));
+
+      document.getElementById('btnFetchProviders').onclick = async () => {
+        const res = await fetch('/api/providers');
+        const providers = await res.json();
+        document.getElementById('providersResult').textContent = JSON.stringify(providers, null, 2);
+      };
+
+      document.getElementById('btnTestProviderConfig').onclick = async () => {
+        const provider = prompt('Provider ID (e.g., skyreels)');
+        if (!provider) return;
+        const cfg = prompt('Config JSON (e.g., {\"api_key\":\"xxx\"})');
+        if (!cfg) return;
+        const resp = await fetch('/api/provider-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ provider, config: JSON.parse(cfg) })
+        });
+        const result = await resp.json();
+        document.getElementById('providerConfigResult').textContent = JSON.stringify(result, null, 2);
+      };
+
+      document.getElementById('btnTestSkyreels').onclick = async () => {
+        const prompt = prompt('Video prompt for SkyReels (e.g., \"Short upbeat product demo\")');
+        if (!prompt) return;
+        const resp = await fetch('/api/generate/skyreels', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, duration: 15 })
+        });
+        const result = await resp.json();
+        document.getElementById('skyreelsResult').textContent = JSON.stringify(result, null, 2);
+      };
+    </script>
+  </body>
+</html>

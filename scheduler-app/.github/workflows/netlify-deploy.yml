@@ -1,0 +1,67 @@
+name: CI & Netlify Deploy
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run generation tests
+        run: npm run test:gen
+
+  deploy:
+    name: Deploy to Netlify
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && secrets.NETLIFY_AUTH_TOKEN != '' && secrets.NETLIFY_SITE_ID != ''
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Deploy to Netlify
+        uses: JamesIves/netlify-deploy-action@v2.1.4
+        with:
+          production_branch: main
+          site_id: ${{ secrets.NETLIFY_SITE_ID }}
+          netlify_auth_token: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+
+  integration:
+    name: Integration tests against Netlify functions
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && secrets.NETLIFY_SITE_URL != ''
+    steps:
+      - uses: actions/checkout@v4
+      - name: Wait for site warmup
+        run: |
+          echo "Waiting 10s for Netlify to warm up"
+          sleep 10
+      - name: Test health function
+        run: |
+          curl -sfS ${{ secrets.NETLIFY_SITE_URL }}/.netlify/functions/health | jq .
+      - name: Test text generation function (stub)
+        run: |
+          curl -s -X POST ${{ secrets.NETLIFY_SITE_URL }}/.netlify/functions/generate-text -H "Content-Type: application/json" -d '{"product":"Test","audience":"devs","brandVoice":"helpful","goal":"awareness","platform":"x"}' | jq .
+      - name: Test image generation function (stub)
+        run: |
+          curl -s -X POST ${{ secrets.NETLIFY_SITE_URL }}/.netlify/functions/generate-image -H "Content-Type: application/json" -d '{"prompt":"test image"}' | jq .
+      - name: Test provider-config function (set + get)
+        run: |
+          curl -s -X POST ${{ secrets.NETLIFY_SITE_URL }}/.netlify/functions/provider-config -H "Content-Type: application/json" -d '{"provider":"skyreels","config":{"api_key":"test"}}' | jq .
+          curl -s ${{ secrets.NETLIFY_SITE_URL }}/.netlify/functions/provider-config | jq .
