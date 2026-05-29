@@ -8,10 +8,15 @@ import type { BrandKit, Channel, GenerateRequest, GenerateResponse, StoredGenera
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const dataDir = path.join(__dirname, '..', 'data')
+const configuredPath = process.env.SQLITE_PATH
+if (configuredPath) {
+  fs.mkdirSync(path.dirname(configuredPath), { recursive: true })
+}
+
+const dataDir = process.env.VERCEL ? path.join('/tmp', 'marrow-studio') : path.join(__dirname, '..', 'data')
 fs.mkdirSync(dataDir, { recursive: true })
 
-const dbPath = process.env.SQLITE_PATH || path.join(dataDir, 'marketing.db')
+const dbPath = configuredPath || path.join(dataDir, 'marketing.db')
 const db = new Database(dbPath)
 db.pragma('journal_mode = WAL')
 
