@@ -5,7 +5,7 @@ import { getBrandKit, upsertBrandKit } from '../lib/db.js'
 const router = Router()
 
 router.get('/', async (_req, res) => {
-  const kit = getBrandKit()
+  const kit = await getBrandKit()
   res.json({ success: true, data: kit })
 })
 
@@ -16,7 +16,7 @@ router.put('/', async (req, res) => {
     return
   }
 
-  const saved = upsertBrandKit({
+  const saved = await upsertBrandKit({
     product: body.product,
     audience: body.audience,
     brandVoice: body.brandVoice,
@@ -27,4 +27,3 @@ router.put('/', async (req, res) => {
 })
 
 export default router
-

@@ -24,10 +24,9 @@ router.post('/', async (req, res) => {
     knobs: body.knobs,
   }
 
-  const brandKit = getBrandKit()
+  const brandKit = await getBrandKit()
   const out = await generateMarketingCopy(input, brandKit)
   res.json({ success: true, data: out })
 })
 
 export default router
-
