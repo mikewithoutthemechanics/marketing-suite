@@ -1,57 +1,35 @@
-# React + TypeScript + Vite
+# Marrow Studio
+Marketing copy studio powered by Groq with Brand Kit + History stored in Supabase.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Easiest automation
+- Deploy once with Vercel’s GitHub integration; after that every push auto-deploys (no CI setup needed).
+- Supabase schema is a one-time action: run [schema.sql](file:///workspace/marketing-app/supabase/schema.sql) in Supabase SQL Editor.
 
-Currently, two official plugins are available:
+## One-click Vercel deploy
+Replace `<YOUR_GITHUB_REPO_URL>` with your repo URL after you push to GitHub.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=<YOUR_GITHUB_REPO_URL>&project-name=marrow-studio&root-directory=marketing-app&env=SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY,GROQ_API_KEY,GROQ_MODEL&envDescription=Required%20vars%20for%20Supabase%20and%20optional%20Groq%20AI%20generation&demo-title=Marrow%20Studio)
 
-## Expanding the ESLint configuration
+## Supabase setup (one-time)
+1. Create a Supabase project
+2. Open SQL Editor → run: [supabase/schema.sql](file:///workspace/marketing-app/supabase/schema.sql)
+3. Copy these values from Supabase project settings:
+   - Project URL → `SUPABASE_URL`
+   - Service role key → `SUPABASE_SERVICE_ROLE_KEY`
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Vercel setup (one-time)
+1. Import the GitHub repo into Vercel
+2. Set Root Directory to `marketing-app`
+3. Add env vars:
+   - `SUPABASE_URL`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `GROQ_API_KEY` (optional; if missing the app still works with stub output)
+   - `GROQ_MODEL` (optional; default is `llama-3.1-70b-versatile`)
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  extends: [
-    // other configs...
-    // Enable lint rules for React
-    reactX.configs['recommended-typescript'],
-    // Enable lint rules for React DOM
-    reactDom.configs.recommended,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+## Local development
+```bash
+cd marketing-app
+cp .env.example .env
+npm install
+npm run dev
 ```
